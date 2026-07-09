@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: WeatherHome(),
-      theme: ThemeData.dark(useMaterial3: true),
+      theme: ThemeData.dark(),
       debugShowCheckedModeBanner: false,
     );
   }
