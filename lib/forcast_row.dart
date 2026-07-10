@@ -6,11 +6,23 @@ class HourlyForecast extends StatelessWidget {
   final String desc;
 
   const HourlyForecast({
-      super.key,
-      required this.time,
-      required this.icon,
-      required this.desc,
-    });
+    super.key,
+    required this.time,
+    required this.icon,
+    required this.desc,
+  });
+
+  // factory HourlyForecast.fromJson(Map<String, dynamic> json) {
+  //   return switch (json) {
+  //     {'last_updated': String datetime, 'pic': IconData iconNew, 'text': String about} =>
+  //       HourlyForecast(
+  //         time: datetime,
+  //         icon: iconNew,
+  //         desc: about,
+  //       ),
+  //     _ => throw const FormatException('json not received.'),
+  //   };
+  // }
 
   @override
   Widget build(BuildContext context) {
