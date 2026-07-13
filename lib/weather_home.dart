@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:weather_app/add_info.dart';
-import 'package:weather_app/forcast_row.dart';
+import 'package:weather_app/forecast_row.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:weather_app/main_card.dart';
@@ -20,6 +20,9 @@ class _WeatherHomeState extends State<WeatherHome> {
   String? wind;
   String? pressure;
   List<Map<String, dynamic>> hourlyData = [];
+  String? errorMessage;
+
+  bool isLoading = true;
 
   // Maps condition text to an appropriate Flutter icon
   IconData _conditionIcon(String condition) {
@@ -33,18 +36,16 @@ class _WeatherHomeState extends State<WeatherHome> {
     return Icons.cloud; // default
   }
 
-  bool isLoading = true;
-
   Future<void> fetchCurrentWeather() async {
     setState(() {
       isLoading = true;
+      errorMessage = null;
     });
     try {
-      await dotenv.load();
       final api = dotenv.get('WEATHER_API');
       final response = await http.get(
         Uri.parse(
-          'http://api.weatherapi.com/v1/forecast.json?key=$api&q=New Delhi&days=1&aqi=no&alerts=no',
+          'https://api.weatherapi.com/v1/forecast.json?key=$api&q=New Delhi&days=1&aqi=no&alerts=no',
         ),
         headers: {'Accept': 'application/json'},
       );
@@ -74,98 +75,127 @@ class _WeatherHomeState extends State<WeatherHome> {
           }).where((h) => targetTimes.contains(h['time'])).toList();
         });
       } else {
-        throw Exception('api data not here');
+        throw Exception('Failed to fetch weather data (${response.statusCode})');
       }
     } catch (e) {
       setState(() {
         isLoading = false;
+        errorMessage = 'Failed to load weather. Please try again.';
       });
     }
   }
+
   @override
   void initState() {
     super.initState();
     fetchCurrentWeather();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          fetchCurrentWeather();
-        },
-        backgroundColor: Color.fromRGBO(59, 87, 126, 0.752),
-        child: Icon(Icons.refresh),
+        // Disabled while a request is in flight to prevent duplicate calls
+        onPressed: isLoading ? null : fetchCurrentWeather,
+        backgroundColor: const Color.fromRGBO(59, 87, 126, 0.752),
+        child: const Icon(Icons.refresh),
       ),
       appBar: AppBar(
-        title: Text("Weather App"),
-        titleTextStyle: TextStyle(
+        title: const Text('Weather App'),
+        titleTextStyle: const TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: 23.4,
         ),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                if (temp != null && desc != null)
-                  MainCard(temp: temp!, icon: _conditionIcon(desc!), desc: desc!),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 6, 8, 8),
-                    child: Text(
-                      "Forecast",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 28,
+          : errorMessage != null
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.cloud_off, size: 48, color: Colors.grey),
+                      const SizedBox(height: 12),
+                      Text(
+                        errorMessage!,
+                        style: const TextStyle(color: Colors.redAccent),
                       ),
-                    ),
-                  ),
-                ),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: hourlyData.map((h) {
-                      return HourlyForecast(
-                        time: h['time'] as String,
-                        icon: _conditionIcon(h['desc'] as String),
-                        desc: h['desc'] as String,
-                      );
-                    }).toList(),
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 8, 8, 0),
-                    child: Text(
-                      "Additional Info",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 28,
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: fetchCurrentWeather,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Retry'),
                       ),
-                    ),
+                    ],
                   ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                )
+              : Column(
                   children: [
-                    AddInfo(name: "Humidity", icon: Icons.water, value: humid),
-                    AddInfo(
-                      name: "Wind Speed",
-                      icon: Icons.wind_power,
-                      value: wind,
+                    if (temp != null && desc != null)
+                      MainCard(
+                        temp: temp!,
+                        icon: _conditionIcon(desc!),
+                        desc: desc!,
+                      ),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(12, 6, 8, 8),
+                        child: Text(
+                          'Forecast',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 28,
+                          ),
+                        ),
+                      ),
                     ),
-                    AddInfo(
-                      name: "pressure",
-                      icon: Icons.umbrella,
-                      value: pressure,
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: hourlyData.map((h) {
+                          return HourlyForecast(
+                            time: h['time'] as String,
+                            icon: _conditionIcon(h['desc'] as String),                            temp: h['temp'] as double,
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(12, 8, 8, 0),
+                        child: Text(
+                          'Additional Info',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 28,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        AddInfo(
+                          name: 'Humidity',
+                          icon: Icons.water,
+                          value: humid,
+                        ),
+                        AddInfo(
+                          name: 'Wind Speed',
+                          icon: Icons.wind_power,
+                          value: wind,
+                        ),
+                        AddInfo(
+                          name: 'Pressure',
+                          icon: Icons.compress,
+                          value: pressure,
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
     );
   }
 }

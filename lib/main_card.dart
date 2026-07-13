@@ -15,11 +15,11 @@ class MainCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-      padding: EdgeInsets.fromLTRB(120, 30, 120, 20),
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+      padding: const EdgeInsets.symmetric(vertical: 30),
       decoration: BoxDecoration(
-        color: Color.fromRGBO(59, 87, 126, 0.752),
-        shape: BoxShape.rectangle,
+        color: const Color.fromRGBO(59, 87, 126, 0.752),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
