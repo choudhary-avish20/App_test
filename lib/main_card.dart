@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class MainCard extends StatelessWidget {
   final double temp;
-  final String icon;
+  final IconData icon;
   final String desc;
 
   const MainCard({
@@ -14,7 +14,6 @@ class MainCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayIcon = icon.startsWith('http') ? icon : 'https:$icon';
     return Container(
       margin: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
       padding: EdgeInsets.fromLTRB(120, 30, 120, 20),
@@ -28,18 +27,10 @@ class MainCard extends StatelessWidget {
         children: [
           Text(
             '${temp.toStringAsFixed(1)}°C',
-            style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w800),
+            style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 13),
-          Image.network(
-            displayIcon,
-            width: 80,
-            height: 80,
-            errorBuilder: (context, error, stackTrace) => const Icon(
-              Icons.cloud,
-              size: 80,
-            ),
-          ),
+          Icon(icon, size: 80),
           const SizedBox(height: 13),
           Text(desc, style: const TextStyle(fontSize: 22)),
         ],

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 class HourlyForecast extends StatelessWidget {
   final String time;
-  final IconData icon;
-  final String desc;
+  final IconData? icon;
+  final String? desc;
 
   const HourlyForecast({
     super.key,
@@ -11,18 +11,6 @@ class HourlyForecast extends StatelessWidget {
     required this.icon,
     required this.desc,
   });
-
-  // factory HourlyForecast.fromJson(Map<String, dynamic> json) {
-  //   return switch (json) {
-  //     {'last_updated': String datetime, 'pic': IconData iconNew, 'text': String about} =>
-  //       HourlyForecast(
-  //         time: datetime,
-  //         icon: iconNew,
-  //         desc: about,
-  //       ),
-  //     _ => throw const FormatException('json not received.'),
-  //   };
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +41,7 @@ class HourlyForecast extends StatelessWidget {
                 size: 30,
               ),
               const SizedBox(height: 8),
-              Text(desc, style: TextStyle(fontSize: 14)),
+              Text(desc!, style: TextStyle(fontSize: 14)),
             ],
           ),
         ),

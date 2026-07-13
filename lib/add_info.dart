@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class AddInfo extends StatelessWidget {
   final String name;
   final IconData icon;
-  final String value;
+  final String? value;
 
   const AddInfo({
       super.key,
@@ -31,7 +31,7 @@ class AddInfo extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          Text(value ?? '--', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
         ],
       ),
     );

@@ -15,11 +15,27 @@ class WeatherHome extends StatefulWidget {
 
 class _WeatherHomeState extends State<WeatherHome> {
   double? temp;
-  String? icon;
   String? desc;
+  String? humid;
+  String? wind;
+  String? pressure;
+  List<Map<String, dynamic>> hourlyData = [];
+
+  // Maps condition text to an appropriate Flutter icon
+  IconData _conditionIcon(String condition) {
+    final c = condition.toLowerCase();
+    if (c.contains('sunny') || c.contains('clear')) return Icons.wb_sunny;
+    if (c.contains('rain') || c.contains('drizzle')) return Icons.grain;
+    if (c.contains('snow') || c.contains('blizzard')) return Icons.ac_unit;
+    if (c.contains('thunder') || c.contains('storm')) return Icons.bolt;
+    if (c.contains('fog') || c.contains('mist')) return Icons.foggy;
+    if (c.contains('wind')) return Icons.wind_power;
+    return Icons.cloud; // default
+  }
+
   bool isLoading = true;
 
-  Future<void> fetchWeather() async {
+  Future<void> fetchCurrentWeather() async {
     setState(() {
       isLoading = true;
     });
@@ -28,7 +44,7 @@ class _WeatherHomeState extends State<WeatherHome> {
       final api = dotenv.get('WEATHER_API');
       final response = await http.get(
         Uri.parse(
-          'http://api.weatherapi.com/v1/current.json?key=$api&q=New Delhi&aqi=no',
+          'http://api.weatherapi.com/v1/forecast.json?key=$api&q=New Delhi&days=1&aqi=no&alerts=no',
         ),
         headers: {'Accept': 'application/json'},
       );
@@ -37,11 +53,25 @@ class _WeatherHomeState extends State<WeatherHome> {
         final current = data['current'] as Map<String, dynamic>;
         final condition = current['condition'] as Map<String, dynamic>;
 
+        final List<dynamic> hours =
+            data['forecast']['forecastday'][0]['hour'] as List<dynamic>;
+
         setState(() {
-          temp = (current['temp_c'] as num).toDouble();
-          icon = condition['icon'] as String;
-          desc = condition['text'] as String;
           isLoading = false;
+          temp = (current['temp_c'] as num).toDouble();
+          desc = condition['text'] as String;
+          humid = current['humidity'].toString();
+          pressure = current['pressure_mb'].toString();
+          wind = current['wind_kph'].toString();
+          const targetTimes = {'09:00', '12:00', '15:00', '18:00', '21:00'};
+          hourlyData = hours.map((h) {
+            final hMap = h as Map<String, dynamic>;
+            return {
+              'time': (hMap['time'] as String).split(' ').last, // "HH:mm"
+              'desc': hMap['condition']['text'] as String,
+              'temp': (hMap['temp_c'] as num).toDouble(),
+            };
+          }).where((h) => targetTimes.contains(h['time'])).toList();
         });
       } else {
         throw Exception('api data not here');
@@ -50,22 +80,19 @@ class _WeatherHomeState extends State<WeatherHome> {
       setState(() {
         isLoading = false;
       });
-      // You can also add some error handling state here
     }
   }
-
   @override
   void initState() {
     super.initState();
-    fetchWeather();
+    fetchCurrentWeather();
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          fetchWeather();
+          fetchCurrentWeather();
         },
         backgroundColor: Color.fromRGBO(59, 87, 126, 0.752),
         child: Icon(Icons.refresh),
@@ -81,8 +108,8 @@ class _WeatherHomeState extends State<WeatherHome> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                if (temp != null && icon != null && desc != null)
-                  MainCard(temp: temp!, icon: icon!, desc: desc!),
+                if (temp != null && desc != null)
+                  MainCard(temp: temp!, icon: _conditionIcon(desc!), desc: desc!),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Padding(
@@ -99,16 +126,13 @@ class _WeatherHomeState extends State<WeatherHome> {
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: [
-                      HourlyForecast(time: "9:00", icon: Icons.cloud, desc: "cloudy"),
-                      HourlyForecast(
-                        time: "12:00",
-                        icon: Icons.cloud,
-                        desc: "cloudy",
-                      ),
-                      HourlyForecast(time: "3:00", icon: Icons.cloud, desc: "cloudy"),
-                      HourlyForecast(time: "6:00", icon: Icons.cloud, desc: "cloudy"),
-                    ],
+                    children: hourlyData.map((h) {
+                      return HourlyForecast(
+                        time: h['time'] as String,
+                        icon: _conditionIcon(h['desc'] as String),
+                        desc: h['desc'] as String,
+                      );
+                    }).toList(),
                   ),
                 ),
                 Align(
@@ -127,9 +151,17 @@ class _WeatherHomeState extends State<WeatherHome> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    AddInfo(name: "Humidity", icon: Icons.water, value: "89"),
-                    AddInfo(name: "Wind Speed", icon: Icons.wind_power, value: "28"),
-                    AddInfo(name: "pressure", icon: Icons.umbrella, value: "1003"),
+                    AddInfo(name: "Humidity", icon: Icons.water, value: humid),
+                    AddInfo(
+                      name: "Wind Speed",
+                      icon: Icons.wind_power,
+                      value: wind,
+                    ),
+                    AddInfo(
+                      name: "pressure",
+                      icon: Icons.umbrella,
+                      value: pressure,
+                    ),
                   ],
                 ),
               ],
